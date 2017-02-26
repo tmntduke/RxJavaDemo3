@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.LoginFilter;
 import android.util.Log;
 
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -17,6 +18,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.observables.GroupedObservable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.BehaviorSubject;
@@ -37,6 +39,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        groupBy();
+    }
+
+    /**
+     * create操作符创建observable
+     */
+    public void create() {
         Observable observable = Observable.create(new ObservableOnSubscribe() {
             @Override
             public void subscribe(ObservableEmitter e) throws Exception {
@@ -58,7 +67,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "accept: " + Thread.currentThread().getName());
             }
         });
+    }
 
+    /**
+     * just/from操作符创建observable
+     */
+    public void just() {
         Observable.just(1, 2, 3).subscribe(new Consumer<Integer>() {
             @Override
             public void accept(Integer integer) throws Exception {
@@ -77,7 +91,13 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
 
+    /**
+     * AsyncSubject
+     * 发射订阅前最后一个元素 仅一个
+     */
+    public void async() {
         AsyncSubject<Integer> asyncSubject = AsyncSubject.create();
         asyncSubject.onNext(1);
         asyncSubject.onNext(2);
@@ -89,7 +109,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "async: " + integer);
             }
         });
+    }
 
+    /**
+     * BehaviorSubject
+     * 发射订阅前最后一个及以后的元素
+     */
+    public void behavior() {
         BehaviorSubject<Integer> behaviorSubject = BehaviorSubject.create();
         behaviorSubject.onNext(1);
         behaviorSubject.onNext(2);
@@ -101,7 +127,13 @@ public class MainActivity extends AppCompatActivity {
         });
         behaviorSubject.onNext(3);
         behaviorSubject.onNext(4);
+    }
 
+    /**
+     * PublishSubject
+     * 发射订阅后的元素
+     */
+    public void pubish() {
         PublishSubject<Integer> publishSubject = PublishSubject.create();
         publishSubject.onNext(1);
         publishSubject.onNext(2);
@@ -113,7 +145,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         publishSubject.onNext(3);
+    }
 
+    /**
+     * map操作符
+     * 对单个元素转换
+     */
+    public void map() {
         Observable.just(0, 1, 2).subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(new Function<Integer, Person>() {
@@ -127,8 +165,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "map: " + s.getName());
             }
         });
+    }
 
-
+    /**
+     * flatMap操作符
+     * 对多个元素进行转化
+     */
+    public void flatmap() {
         Observable.just(0, 1, 2).flatMap(new Function<Integer, ObservableSource<Person>>() {
             @Override
             public ObservableSource<Person> apply(Integer integer) throws Exception {
@@ -140,8 +183,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "flat: " + s.getName());
             }
         });
+    }
 
-
+    /**
+     * interval操作符
+     * 发送整数序列(或以一定时间间隔)
+     */
+    public void interval() {
         Observable<Long> o = Observable.interval(2, TimeUnit.SECONDS);
         o.subscribe(new Observer<Long>() {
             @Override
@@ -151,11 +199,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(Long value) {
-                Log.i(TAG, "onNext: "+String.valueOf(value));
-               if (value>=10){
+                Log.i(TAG, "onNext: " + String.valueOf(value));
+                if (value >= 10) {
 
-                   disposable.dispose();
-               }
+                    disposable.dispose();//停止接收
+                }
             }
 
             @Override
@@ -169,7 +217,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Observable.timer(2,TimeUnit.SECONDS).subscribe(new Observer<Long>() {
+    }
+
+    /**
+     * timer操作符
+     * 一定时间间隔发射一个元素
+     */
+    public void timer() {
+        Observable.timer(2, TimeUnit.SECONDS).subscribe(new Observer<Long>() {
             @Override
             public void onSubscribe(Disposable d) {
 
@@ -177,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(Long value) {
-                Log.i(TAG, "timer: "+String.valueOf(value));
+                Log.i(TAG, "timer: " + String.valueOf(value));
             }
 
             @Override
@@ -191,4 +246,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    /**
+     * groupBy操作符
+     * 将元素分类
+     */
+    public void groupBy() {
+        Observable.range(0, 10).groupBy(new Function<Integer, String>() {
+            @Override
+            public String apply(Integer integer) throws Exception {
+                return integer % 2 == 0 ? "偶数" : "奇数";
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<GroupedObservable<String, Integer>>() {
+                    @Override
+                    public void accept(final GroupedObservable<String, Integer> stringIntegerGroupedObservable) throws Exception {
+                        Log.i(TAG, "group: " + stringIntegerGroupedObservable.getKey());
+                        stringIntegerGroupedObservable.subscribe(new Consumer<Integer>() {
+                            @Override
+                            public void accept(Integer integer) throws Exception {
+                                Log.i(TAG, "key: " + stringIntegerGroupedObservable.getKey() + " value:" + integer);
+                            }
+                        });
+                    }
+                });
+    }
+
+
 }
