@@ -1,0 +1,21 @@
+package tmnt.example.rxjavademo3;
+
+/**
+ * Created by tmnt on 2017/4/8.
+ */
+
+public class Car {
+    private String name;
+
+    public Car(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}

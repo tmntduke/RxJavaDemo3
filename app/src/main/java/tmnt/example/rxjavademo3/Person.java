@@ -1,5 +1,7 @@
 package tmnt.example.rxjavademo3;
 
+import java.util.List;
+
 /**
  * Created by tmnt on 2017/2/24.
  */
@@ -7,6 +9,7 @@ public class Person {
 
     private String name;
     private int age;
+    private Car[] mCars;
 
     public Person(String name, int age) {
         this.name = name;
@@ -27,5 +30,13 @@ public class Person {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public Car[] getCars() {
+        return mCars;
+    }
+
+    public void setCars(Car[] cars) {
+        mCars = cars;
     }
 }

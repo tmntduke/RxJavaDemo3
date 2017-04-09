@@ -6,7 +6,11 @@ import android.os.Bundle;
 import android.text.LoginFilter;
 import android.util.Log;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -31,6 +35,12 @@ public class MainActivity extends AppCompatActivity {
     Person p1 = new Person("tmnt", 20);
     Person p2 = new Person("duke", 21);
     Person p3 = new Person("tony", 22);
+
+    Car mCar1 = new Car("benz");
+    Car mCar2 = new Car("bmw");
+    Car mCar3 = new Car("audi");
+
+
     Person[] ps = {p1, p2, p3};
     Disposable disposable;
 
@@ -39,12 +49,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        groupBy();
+        p1.setCars(new Car[]{mCar1, mCar2, mCar3});
+        p2.setCars(new Car[]{mCar1, mCar3});
+        p3.setCars(new Car[]{mCar2, mCar3});
+
+        flatmap();
+
     }
 
     /**
      * create操作符创建observable
      */
+
     public void create() {
         Observable observable = Observable.create(new ObservableOnSubscribe() {
             @Override
@@ -172,17 +188,12 @@ public class MainActivity extends AppCompatActivity {
      * 对多个元素进行转化
      */
     public void flatmap() {
-        Observable.just(0, 1, 2).flatMap(new Function<Integer, ObservableSource<Person>>() {
-            @Override
-            public ObservableSource<Person> apply(Integer integer) throws Exception {
-                return Observable.just(ps[integer]);
-            }
-        }).subscribe(new Consumer<Person>() {
-            @Override
-            public void accept(Person s) throws Exception {
-                Log.i(TAG, "flat: " + s.getName());
-            }
-        });
+        Observable.just(1)
+                .flatMap(integer -> Observable.fromArray(ps[integer].getCars()))
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(s -> Log.i(TAG, "flatmap: " + s.getName()));
+
     }
 
     /**
@@ -216,7 +227,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
     }
 
     /**
