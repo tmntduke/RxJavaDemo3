@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         p2.setCars(new Car[]{mCar1, mCar3});
         p3.setCars(new Car[]{mCar2, mCar3});
 
-        flatmap();
+        reduce();
 
     }
 
@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
      * create操作符创建observable
      */
 
-    public void create() {
+    private void create() {
         Observable observable = Observable.create(new ObservableOnSubscribe() {
             @Override
             public void subscribe(ObservableEmitter e) throws Exception {
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * just/from操作符创建observable
      */
-    public void just() {
+    private void just() {
         Observable.just(1, 2, 3).subscribe(new Consumer<Integer>() {
             @Override
             public void accept(Integer integer) throws Exception {
@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
      * AsyncSubject
      * 发射订阅前最后一个元素 仅一个
      */
-    public void async() {
+    private void async() {
         AsyncSubject<Integer> asyncSubject = AsyncSubject.create();
         asyncSubject.onNext(1);
         asyncSubject.onNext(2);
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
      * BehaviorSubject
      * 发射订阅前最后一个及以后的元素
      */
-    public void behavior() {
+    private void behavior() {
         BehaviorSubject<Integer> behaviorSubject = BehaviorSubject.create();
         behaviorSubject.onNext(1);
         behaviorSubject.onNext(2);
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
      * PublishSubject
      * 发射订阅后的元素
      */
-    public void pubish() {
+    private void pubish() {
         PublishSubject<Integer> publishSubject = PublishSubject.create();
         publishSubject.onNext(1);
         publishSubject.onNext(2);
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
      * map操作符
      * 对单个元素转换
      */
-    public void map() {
+    private void map() {
         Observable.just(0, 1, 2).subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(new Function<Integer, Person>() {
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
      * flatMap操作符
      * 对多个元素进行转化
      */
-    public void flatmap() {
+    private void flatmap() {
         Observable.just(1)
                 .flatMap(integer -> Observable.fromArray(ps[integer].getCars()))
                 .subscribeOn(Schedulers.newThread())
@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
      * interval操作符
      * 发送整数序列(或以一定时间间隔)
      */
-    public void interval() {
+    private void interval() {
         Observable<Long> o = Observable.interval(2, TimeUnit.SECONDS);
         o.subscribe(new Observer<Long>() {
             @Override
@@ -233,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
      * timer操作符
      * 一定时间间隔发射一个元素
      */
-    public void timer() {
+    private void timer() {
         Observable.timer(2, TimeUnit.SECONDS).subscribe(new Observer<Long>() {
             @Override
             public void onSubscribe(Disposable d) {
@@ -261,7 +261,7 @@ public class MainActivity extends AppCompatActivity {
      * groupBy操作符
      * 将元素分类
      */
-    public void groupBy() {
+    private void groupBy() {
         Observable.range(0, 10).groupBy(new Function<Integer, String>() {
             @Override
             public String apply(Integer integer) throws Exception {
@@ -283,5 +283,92 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * 结合两个Observable
+     * 数量为少的Observable
+     */
+    private void zip() {
+        Observable<Integer> observable = Observable.just(1, 2, 3);
+        Observable<String> observable1 = Observable.just("a", "b", "c", "d");
+        Observable.zip(observable, observable1, ((integer, s) -> s + integer))
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
+                    }
+
+                    @Override
+                    public void onNext(String value) {
+                        Log.i(TAG, "onNext: " + value);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+
+    }
+
+    /**
+     * 模拟被压
+     * filter过滤减少数量
+     */
+    private void filter() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; ; i++) {
+                    e.onNext(i);
+                }
+            }
+        }).filter(integer -> integer % 10 == 0)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integer -> Log.i(TAG, "filter: " + integer));
+
+    }
+
+    /**
+     * 模拟被压
+     * sample为两秒采样 减少数量
+     */
+    private void sample() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; ; i++) {
+                    e.onNext(i);
+                }
+            }
+        }).sample(2, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integer -> Log.i(TAG, "sample: " + integer));
+    }
+
+    /**
+     * 模拟被压
+     * 减缓时间
+     */
+    private void reduce() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; ; i++) {
+                    e.onNext(i);
+                    Thread.sleep(2000);
+                }
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integer -> Log.i(TAG, "reduce: " + integer));
+    }
 }
