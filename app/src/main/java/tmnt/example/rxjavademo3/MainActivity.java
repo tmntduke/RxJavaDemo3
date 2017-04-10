@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         p2.setCars(new Car[]{mCar1, mCar3});
         p3.setCars(new Car[]{mCar2, mCar3});
 
-        reduce();
+        scan();
 
     }
 
@@ -371,4 +371,56 @@ public class MainActivity extends AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(integer -> Log.i(TAG, "reduce: " + integer));
     }
+
+    /**
+     * 将数据按指定个数整合为集合
+     * 有不同参数
+     */
+    private void buffer() {
+        Observable.just(1, 2, 3, 4, 5, 6)
+                .buffer(3)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integers -> {
+                    for (int i = 0; i < integers.size(); i++) {
+                        Log.i(TAG, "buffer: " + integers + "  " + integers.get(i));
+                    }
+                });
+    }
+
+    /**
+     * 和buffer相似，最终合成的为Observable
+     * 有不同参数
+     */
+    private void window() {
+        Observable.just(1, 2, 3, 4, 5, 6)
+                .window(3)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integerObservable ->
+                        integerObservable.subscribe(integer ->
+                                Log.i(TAG, "window: " + integer)));
+    }
+
+    /**
+     * 将数据应用到指定的函数
+     * （之后产生的结果再次与之后的数据应用）
+     */
+    private void scan() {
+        Observable.just(2, 3, 4, 5)
+                .scan((integer, integer2) -> integer + integer2)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integer -> Log.i(TAG, "scan: " + integer));
+    }
+
+    /**
+     * 过滤重复
+     */
+    private void distinct() {
+        Observable.just(1, 2, 2, 3, 3, 4)
+                .distinct()
+                .subscribe(integer -> Log.i(TAG, "distinct: " + integer));
+    }
 }
+
