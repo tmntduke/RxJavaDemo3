@@ -27,6 +27,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.internal.util.ExceptionHelper;
 import io.reactivex.observables.GroupedObservable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.AsyncSubject;
@@ -60,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         p2.setCars(new Car[]{mCar1, mCar3});
         p3.setCars(new Car[]{mCar2, mCar3});
 
-        combineLatest();
+        timeOut();
 
     }
 
@@ -485,13 +486,49 @@ public class MainActivity extends AppCompatActivity {
      * 使用函数将最近的两个observable的数据结合起来
      */
     private void combineLatest() {
-        Observable<Integer> observable = Observable.just(1, 2, 3, 4);
+        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; i < 5; i++) {
+                    e.onNext(i);
+                    Thread.sleep(1000);
+                }
+            }
+        });
         Observable<String> observable1 = Observable.just("a", "b", "c");
         Observable.combineLatest(observable, observable1, ((integer, s) -> integer + s))
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(s -> Log.i(TAG, "combineLatest: " + s));
 
+    }
+
+
+    /**
+     * 指定时间内没有发射数据就抛出一个异常
+     */
+    private void timeOut() {
+        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; i < 5; i++) {
+                    if (i == 3) {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (Exception ex) {
+                            Thread.interrupted();
+                        }
+                    }
+                    e.onNext(i);
+
+                }
+            }
+        });
+
+        observable.timeout(3, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(s -> Log.i(TAG, "timeOut: " + s), throwable -> Log.i(TAG, "timeOut: " + throwable.toString()));
     }
 
 
