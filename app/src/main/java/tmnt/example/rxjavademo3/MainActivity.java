@@ -1,6 +1,7 @@
 package tmnt.example.rxjavademo3;
 
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.LoginFilter;
@@ -13,6 +14,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
@@ -44,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
     Person[] ps = {p1, p2, p3};
     Disposable disposable;
 
+    Subscription subscription;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         p2.setCars(new Car[]{mCar1, mCar3});
         p3.setCars(new Car[]{mCar2, mCar3});
 
-        scan();
+        combineLatest();
 
     }
 
@@ -422,5 +429,71 @@ public class MainActivity extends AppCompatActivity {
                 .distinct()
                 .subscribe(integer -> Log.i(TAG, "distinct: " + integer));
     }
+
+    private void flowable() {
+        Flowable.create(new FlowableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(FlowableEmitter<Integer> e) throws Exception {
+                for (int i = 0; i <= 100; i++) {
+                    e.onNext(i);
+                }
+            }
+        }, BackpressureStrategy.ERROR)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<Integer>() {
+                    @Override
+                    public void onSubscribe(Subscription s) {
+                        s.request(5);
+                        subscription = s;
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        Log.i(TAG, "onNext: " + integer);
+                        //subscription.request(3);
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+    /**
+     * 并行发射多个observable
+     */
+    private void concat() {
+        Observable<Integer> observable = Observable.just(1);
+        Observable<Integer> observable1 = Observable.just(2);
+        Observable<Integer> observable2 = Observable.just(3);
+
+        Observable.concat(observable, observable1, observable2)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(integer -> Log.i(TAG, "concat: " + integer));
+
+    }
+
+    /**
+     * 使用函数将最近的两个observable的数据结合起来
+     */
+    private void combineLatest() {
+        Observable<Integer> observable = Observable.just(1, 2, 3, 4);
+        Observable<String> observable1 = Observable.just("a", "b", "c");
+        Observable.combineLatest(observable, observable1, ((integer, s) -> integer + s))
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(s -> Log.i(TAG, "combineLatest: " + s));
+
+    }
+
+
 }
 
